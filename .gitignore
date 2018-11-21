@@ -1,0 +1,6 @@
+__pycache__
+.vscode
+pubmed_bib.egg-info
+output.bib
+output2.bib
+pmids.txt
