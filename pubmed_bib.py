@@ -17,15 +17,29 @@ def getReference(id):
 # Format the reference to BibTex format
 def formatReference(reference):
     title = reference['title'] if 'title' in reference.keys() else ''
-    author = reference['author'] if 'author' in reference.keys() else ''
+    authors = reference['author'] if 'author' in reference.keys() else ''
+    authorList = []
+    for author in authors:
+        if ('family' in author.keys()) and ('given' in author.keys()):
+            authorList.append(author['family'] + ', ' + author['given'])
+        elif ('family' in author.keys()) and ('given' not in author.keys()):
+            authorList.append(author['family'])
+        elif ('family' not in author.keys()) and ('given' in author.keys()):
+            authorList.append(author['given'])
+        else:
+            continue
+
     journal = reference['container-title'] if 'container-title' in reference.keys() else ''
     volume = reference['volume'] if 'volume' in reference.keys() else ''
     page = reference['page'] if 'page' in reference.keys() else ''
-    year = reference['issued']['date-parts'][0][0] if 'issued' in reference.keys() else ''
+    if 'issued' in reference.keys():
+        year = reference['issued']['date-parts'][0][0]
+    elif 'epub-date' in reference.keys():
+        year = reference['epub-date']['date-parts'][0][0]    
 
-    output = f'''@article{{{ author[0]['family'].lower() + str(year) + title.split(' ')[0].lower() },
+    output = f'''@article{{{ authorList[0].split(' ')[0].lower() + str(year) + title.split(' ')[0].lower() },
     title={{{title}}},
-    author={{{' and '.join([ aut['family'] + ', ' + aut['given'] for aut in author ])}}},
+    author={{{' and '.join(authorList)}}},
     journal={{{journal}}},
     volume={{{volume}}},
     pages={{{page}}},
