@@ -32,12 +32,16 @@ def formatReference(reference):
     journal = reference['container-title'] if 'container-title' in reference.keys() else ''
     volume = reference['volume'] if 'volume' in reference.keys() else ''
     page = reference['page'] if 'page' in reference.keys() else ''
+    
     if 'issued' in reference.keys():
         year = reference['issued']['date-parts'][0][0]
     elif 'epub-date' in reference.keys():
         year = reference['epub-date']['date-parts'][0][0]    
 
-    output = f'''@article{{{ authorList[0].split(' ')[0].lower() + str(year) + title.split(' ')[0].lower() },
+    ref_id = authors[0]["family"].lower() if "family" in authors[0].keys() else authors[0]
+    ref_id += str(year) + title.split(' ')[0].lower()
+
+    output = f'''@article{{{ ref_id },
     title={{{title}}},
     author={{{' and '.join(authorList)}}},
     journal={{{journal}}},
@@ -57,7 +61,7 @@ def showReference(id):
     if 'status' in reference.keys() and reference['status'] == 'error' :
         output = 'Reference not found'
     else:
-        output = f'The BibTex for the reference with PMID={id} is:\n' + formatReference(reference)
+        output = f'The BibTex for the reference with PMID={id} is:\n\n' + formatReference(reference)
 
     click.echo(output)
     return 
