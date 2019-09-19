@@ -61,7 +61,7 @@ def showReference(id):
     if 'status' in reference.keys() and reference['status'] == 'error' :
         output = 'Reference not found'
     else:
-        output = f'The BibTex for the reference with PMID={id} is:\n\n' + formatReference(reference)
+        output = formatReference(reference)
 
     click.echo(output)
     return 
