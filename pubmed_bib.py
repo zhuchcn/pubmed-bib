@@ -29,7 +29,8 @@ def formatReference(reference):
         else:
             continue
 
-    journal = reference['container-title'] if 'container-title' in reference.keys() else ''
+    journal = reference['container-title'] \
+            if 'container-title' in reference.keys() else ''
     volume = reference['volume'] if 'volume' in reference.keys() else ''
     page = reference['page'] if 'page' in reference.keys() else ''
     
@@ -38,7 +39,8 @@ def formatReference(reference):
     elif 'epub-date' in reference.keys():
         year = reference['epub-date']['date-parts'][0][0]    
 
-    ref_id = authors[0]["family"].lower() if "family" in authors[0].keys() else authors[0]
+    ref_id = authors[0]["family"].lower() \
+            if "family" in authors[0].keys() else authors[0]
     ref_id += str(year) + title.split(' ')[0].lower()
 
     output = f'''@article{{{ ref_id },
@@ -48,12 +50,14 @@ def formatReference(reference):
     volume={{{volume}}},
     pages={{{page}}},
     year={{{year}}}
-}}'''
+}}
+'''
     return output
 
 def showReference(id):
     '''
-    Get the BibTex styled reference from a given PMID from the PubMed database using PubMed's API
+    Get the BibTex styled reference from a given PMID from the PubMed database 
+    using PubMed's API
     '''
     # Get the reference from PubMed
     reference = getReference(id)        
@@ -64,7 +68,20 @@ def showReference(id):
         output = formatReference(reference)
 
     click.echo(output)
-    return 
+    return
+
+def saveReference(id, path):
+    '''
+    Append a reference to an bib file
+    '''
+    reference = getReference(id)
+    if 'status' in reference.keys() and reference['status'] == 'error' :
+        click.echo("Reference not found")
+        return
+    with open(path, "a") as f:
+        f.write(formatReference(reference))
+    return
+        
 
 def convertReferences(input_file, output_file):
     # Read all PMIDs in
@@ -93,7 +110,10 @@ def pubMed2BibTex(id, input_file, output_file):
     Retrieve article reference from PubMed in BibTex format.
     '''
     if id:
-        showReference(id)
+        if output_file:
+            saveReference(id, output_file)
+        else:
+            showReference(id)
     elif input_file and output_file:
         convertReferences(input_file, output_file)
     else:
