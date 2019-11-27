@@ -15,7 +15,7 @@ def getReference(id):
     return response
 
 # Format the reference to BibTex format
-def formatReference(reference):
+def formatReference(reference, use_short):
     title = reference['title'] if 'title' in reference.keys() else ''
     authors = reference['author'] if 'author' in reference.keys() else ''
     authorList = []
@@ -29,10 +29,10 @@ def formatReference(reference):
         else:
             continue
 
-    journal = reference['container-title'] \
-            if 'container-title' in reference.keys() else ''
-    volume = reference['volume'] if 'volume' in reference.keys() else ''
-    page = reference['page'] if 'page' in reference.keys() else ''
+    journal_long = reference.get('container-title') or ''
+    journal_short = reference.get('container-title-short') or ''
+    volume = reference.get('volume') or ''
+    page = reference.get('page') or ''
     
     if 'issued' in reference.keys():
         year = reference['issued']['date-parts'][0][0]
@@ -46,7 +46,8 @@ def formatReference(reference):
     output = f'''@article{{{ ref_id },
     title={{{title}}},
     author={{{' and '.join(authorList)}}},
-    journal={{{journal}}},
+    {"journal-long" if use_short else "journal"}={{{journal_long}}},
+    {"journal" if use_short else "journal-short"}={{{journal_short}}},
     volume={{{volume}}},
     pages={{{page}}},
     year={{{year}}}
@@ -54,7 +55,7 @@ def formatReference(reference):
 '''
     return output
 
-def showReference(id):
+def showReference(id, use_short):
     '''
     Get the BibTex styled reference from a given PMID from the PubMed database 
     using PubMed's API
@@ -65,12 +66,12 @@ def showReference(id):
     if 'status' in reference.keys() and reference['status'] == 'error' :
         output = 'Reference not found'
     else:
-        output = formatReference(reference)
+        output = formatReference(reference, use_short)
 
     click.echo(output)
     return
 
-def saveReference(id, path):
+def saveReference(id, path, use_short):
     '''
     Append a reference to an bib file
     '''
@@ -79,7 +80,7 @@ def saveReference(id, path):
         click.echo("Reference not found")
         return
     with open(path, "a") as f:
-        f.write(formatReference(reference))
+        f.write(formatReference(reference, use_short))
     return
         
 
@@ -98,24 +99,31 @@ def convertReferences(input_file, output_file):
                     ref = formatReference(ref)
                     successNumber += 1
                     oh.write(ref+'\n')
-    print(f'{successNumber} reference{"s" if successNumber > 1 else ""} retrieved.\n{failNumber} reference{"s" if failNumber > 1 else ""} not found.')
+    print(f'{successNumber} reference{"s" if successNumber > 1 else ""} ' +\
+          f'retrieved.\n{failNumber} reference' +\
+          f'{"s" if failNumber > 1 else ""} ' +\
+          f'not found.')
     return
 
 @click.command()
 @click.option('--id', default=None,  help="The PubMed PMID.")
-@click.option('--input-file', default=None, help='A text file with list of PMID')
-@click.option('--output-file', default=None, help='The output file to store BibTex styled references')
-def pubMed2BibTex(id, input_file, output_file):
+@click.option('--input-file', default=None,
+              help='A text file with list of PMID')
+@click.option('--output-file', default=None,
+              help='The output file to store BibTex styled references')
+@click.option('--short-journal/--long-journal', default=False,
+              help="Use short journal name")
+def pubMed2BibTex(id, input_file, output_file, short_journal):
     '''
     Retrieve article reference from PubMed in BibTex format.
     '''
     if id:
         if output_file:
-            saveReference(id, output_file)
+            saveReference(id, output_file, short_journal)
         else:
-            showReference(id)
+            showReference(id, short_journal)
     elif input_file and output_file:
-        convertReferences(input_file, output_file)
+        convertReferences(input_file, output_file, short_journal)
     else:
         return
 
