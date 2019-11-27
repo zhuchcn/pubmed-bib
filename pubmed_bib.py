@@ -1,6 +1,7 @@
 import click
 import requests
 import json
+import re
 
 # Get a reference from PubMed database
 def getReference(id):
@@ -12,11 +13,16 @@ def getReference(id):
     }
     # get a reference
     response = requests.get(url_format, params = queryParams).json()
-    return response
+    return id, response
 
 # Format the reference to BibTex format
 def formatReference(reference, use_short):
+    id, reference = reference
     title = reference['title'] if 'title' in reference.keys() else ''
+    # convert <sub> and <sup>> to latex
+    title = re.sub("<sub>(.+)</sub>", "$_{\\1}$", title)
+    title = re.sub("<sup>(.+)</sup>", "$^{\\1}$", title)
+
     authors = reference['author'] if 'author' in reference.keys() else ''
     authorList = []
     for author in authors:
@@ -50,7 +56,8 @@ def formatReference(reference, use_short):
     {"journal" if use_short else "journal-short"}={{{journal_short}}},
     volume={{{volume}}},
     pages={{{page}}},
-    year={{{year}}}
+    year={{{year}}},
+    PMID={{{id}}}
 }}
 '''
     return output
@@ -61,9 +68,9 @@ def showReference(id, use_short):
     using PubMed's API
     '''
     # Get the reference from PubMed
-    reference = getReference(id)        
+    reference = getReference(id)
     # I the reference is not found
-    if 'status' in reference.keys() and reference['status'] == 'error' :
+    if 'status' in reference[1].keys() and reference[1]['status'] == 'error' :
         output = 'Reference not found'
     else:
         output = formatReference(reference, use_short)
@@ -76,7 +83,7 @@ def saveReference(id, path, use_short):
     Append a reference to an bib file
     '''
     reference = getReference(id)
-    if 'status' in reference.keys() and reference['status'] == 'error' :
+    if 'status' in reference[1].keys() and reference[1]['status'] == 'error' :
         click.echo("Reference not found")
         return
     with open(path, "a") as f:
